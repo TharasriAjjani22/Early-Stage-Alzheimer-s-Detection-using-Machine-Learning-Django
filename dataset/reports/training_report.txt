@@ -1,0 +1,130 @@
+
+Train size: 480  |  Test size: 120
+
+── Cross-Validation Results ──
+  Logistic Regression       CV Acc: 99.00% ± 1.33%
+  K-Nearest Neighbors       CV Acc: 97.67% ± 0.97%
+  SVM (RBF)                 CV Acc: 98.83% ± 1.00%
+  Random Forest             CV Acc: 99.33% ± 0.82%
+  AdaBoost                  CV Acc: 97.50% ± 1.49%
+  Gradient Boosting         CV Acc: 97.83% ± 1.45%
+  XGBoost                   CV Acc: 98.50% ± 0.97%
+
+============================================================
+  MODEL EVALUATION ON HELD-OUT TEST SET  (80/20 split)
+============================================================
+
+── Logistic Regression ──
+  Accuracy  : 100.00%
+  F1 (weighted): 1.0000
+  AUC (OvR) : 1.0000
+              precision    recall  f1-score   support
+
+ Nondemented      1.000     1.000     1.000        60
+         MCI      1.000     1.000     1.000        30
+    Demented      1.000     1.000     1.000        30
+
+    accuracy                          1.000       120
+   macro avg      1.000     1.000     1.000       120
+weighted avg      1.000     1.000     1.000       120
+
+
+── K-Nearest Neighbors ──
+  Accuracy  : 99.17%
+  F1 (weighted): 0.9917
+  AUC (OvR) : 0.9996
+              precision    recall  f1-score   support
+
+ Nondemented      1.000     1.000     1.000        60
+         MCI      0.968     1.000     0.984        30
+    Demented      1.000     0.967     0.983        30
+
+    accuracy                          0.992       120
+   macro avg      0.989     0.989     0.989       120
+weighted avg      0.992     0.992     0.992       120
+
+
+── SVM (RBF) ──
+  Accuracy  : 100.00%
+  F1 (weighted): 1.0000
+  AUC (OvR) : 1.0000
+              precision    recall  f1-score   support
+
+ Nondemented      1.000     1.000     1.000        60
+         MCI      1.000     1.000     1.000        30
+    Demented      1.000     1.000     1.000        30
+
+    accuracy                          1.000       120
+   macro avg      1.000     1.000     1.000       120
+weighted avg      1.000     1.000     1.000       120
+
+
+── Random Forest ──
+  Accuracy  : 100.00%
+  F1 (weighted): 1.0000
+  AUC (OvR) : 1.0000
+              precision    recall  f1-score   support
+
+ Nondemented      1.000     1.000     1.000        60
+         MCI      1.000     1.000     1.000        30
+    Demented      1.000     1.000     1.000        30
+
+    accuracy                          1.000       120
+   macro avg      1.000     1.000     1.000       120
+weighted avg      1.000     1.000     1.000       120
+
+
+── AdaBoost ──
+  Accuracy  : 96.67%
+  F1 (weighted): 0.9673
+  AUC (OvR) : 0.9985
+              precision    recall  f1-score   support
+
+ Nondemented      1.000     0.950     0.974        60
+         MCI      0.882     1.000     0.938        30
+    Demented      1.000     0.967     0.983        30
+
+    accuracy                          0.967       120
+   macro avg      0.961     0.972     0.965       120
+weighted avg      0.971     0.967     0.967       120
+
+
+── Gradient Boosting ──
+  Accuracy  : 97.50%
+  F1 (weighted): 0.9754
+  AUC (OvR) : 1.0000
+              precision    recall  f1-score   support
+
+ Nondemented      1.000     0.967     0.983        60
+         MCI      0.909     1.000     0.952        30
+    Demented      1.000     0.967     0.983        30
+
+    accuracy                          0.975       120
+   macro avg      0.970     0.978     0.973       120
+weighted avg      0.977     0.975     0.975       120
+
+
+── XGBoost ──
+  Accuracy  : 99.17%
+  F1 (weighted): 0.9917
+  AUC (OvR) : 1.0000
+              precision    recall  f1-score   support
+
+ Nondemented      1.000     0.983     0.992        60
+         MCI      0.968     1.000     0.984        30
+    Demented      1.000     1.000     1.000        30
+
+    accuracy                          0.992       120
+   macro avg      0.989     0.994     0.992       120
+weighted avg      0.992     0.992     0.992       120
+
+
+=======================================================
+  BEST MODEL: Logistic Regression
+  Accuracy : 100.00%
+  F1 Score : 1.0000
+  AUC (OvR): 1.0000
+=======================================================
+
+Model saved  → /home/claude/alzheimer_detection/dataset/../utils/alzheimer_model.pkl
+Features saved → /home/claude/alzheimer_detection/dataset/../utils/feature_names.pkl

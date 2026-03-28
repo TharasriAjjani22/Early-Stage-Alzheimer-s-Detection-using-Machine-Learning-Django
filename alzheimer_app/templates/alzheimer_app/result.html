@@ -1,0 +1,172 @@
+{% extends "alzheimer_app/base.html" %}
+{% block title %}Assessment Result — NeuroDetect{% endblock %}
+
+{% block extra_css %}
+<style>
+  .result-hero {
+    border-radius: 16px; padding: 32px;
+    margin-bottom: 24px;
+    position: relative; overflow: hidden;
+    border: 1px solid;
+  }
+  .result-hero.healthy {
+    background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02));
+    border-color: rgba(16,185,129,0.25);
+  }
+  .result-hero.mci {
+    background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.02));
+    border-color: rgba(245,158,11,0.25);
+  }
+  .result-hero.alzheimer {
+    background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.02));
+    border-color: rgba(239,68,68,0.25);
+  }
+  .result-icon { font-size: 3rem; margin-bottom: 12px; }
+  .result-label { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+  .result-label.healthy { color: var(--green); }
+  .result-label.mci { color: var(--amber); }
+  .result-label.alzheimer { color: var(--red); }
+  .result-desc { color: var(--text2); font-size: 0.9rem; }
+  .result-meta { display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap; }
+  .result-meta-item { font-size: 0.8rem; }
+  .result-meta-item span { color: var(--text3); display: block; }
+  .result-meta-item strong { font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: var(--text); }
+
+  .confidence-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .conf-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+  .conf-pct { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 500; }
+  .conf-label { font-size: 0.75rem; color: var(--text3); margin-top: 4px; }
+  .conf-bar { height: 4px; border-radius: 2px; margin-top: 12px; }
+
+  .risk-gauge-wrap { text-align: center; padding: 8px 0; }
+  .risk-circle {
+    width: 120px; height: 120px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; margin: 0 auto 12px;
+    border: 4px solid;
+  }
+  .risk-circle.low { border-color: var(--green); background: rgba(16,185,129,0.08); }
+  .risk-circle.moderate { border-color: var(--amber); background: rgba(245,158,11,0.08); }
+  .risk-circle.high { border-color: var(--red); background: rgba(239,68,68,0.08); }
+  .risk-num { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 500; }
+  .risk-unit { font-size: 0.7rem; color: var(--text3); }
+
+  .rec-list { list-style: none; }
+  .rec-list li {
+    padding: 11px 14px; margin-bottom: 8px;
+    background: var(--surface2); border-radius: 8px;
+    font-size: 0.875rem; color: var(--text2);
+    border-left: 3px solid var(--border2);
+  }
+  .rec-list li:first-child { border-left-color: var(--accent); }
+  .rec-list li:first-child { color: var(--text); }
+
+  .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .data-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  .data-row:last-child { border-bottom: none; }
+  .data-row .key { color: var(--text3); }
+  .data-row .val { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Assessment Result</h1>
+  <p>Patient: <strong style="color:var(--text)">{{ assessment.patient_name|default:"Anonymous" }}</strong> &nbsp;·&nbsp; {{ assessment.created_at|date:"F j, Y" }}</p>
+</div>
+
+<!-- Result Hero -->
+<div class="result-hero {{ assessment.prediction }}">
+  <div class="result-icon">
+    {% if assessment.prediction == 'healthy' %}✅{% elif assessment.prediction == 'mci' %}⚠️{% else %}🔴{% endif %}
+  </div>
+  <div class="result-label {{ assessment.prediction }}">{{ assessment.result_label }}</div>
+  <div class="result-desc">
+    {% if assessment.prediction == 'healthy' %}No significant cognitive impairment indicators detected. Continue preventive care and annual screening.
+    {% elif assessment.prediction == 'mci' %}Mild Cognitive Impairment detected. This may represent an early stage of Alzheimer's. Specialist evaluation recommended.
+    {% else %}Early Alzheimer's disease indicators detected. Comprehensive neurological evaluation is urgently recommended.{% endif %}
+  </div>
+  <div class="result-meta">
+    <div class="result-meta-item"><span>Patient Age</span><strong>{{ assessment.patient_age }} yrs</strong></div>
+    <div class="result-meta-item"><span>MMSE Score</span><strong>{{ assessment.mmse_score }}/30</strong></div>
+    <div class="result-meta-item"><span>CDR Rating</span><strong>{{ assessment.cdr_score }}</strong></div>
+    <div class="result-meta-item"><span>Risk Level</span><strong>{{ assessment.risk_level }}</strong></div>
+  </div>
+</div>
+
+<!-- Confidence Scores -->
+<div class="confidence-grid">
+  <div class="conf-card">
+    <div class="conf-pct" style="color:var(--green)">{{ assessment.confidence_healthy }}%</div>
+    <div class="conf-label">Cognitively Normal</div>
+    <div class="conf-bar" style="background:var(--border); overflow:hidden;"><div style="width:{{ assessment.confidence_healthy }}%; height:4px; background:var(--green); border-radius:2px;"></div></div>
+  </div>
+  <div class="conf-card">
+    <div class="conf-pct" style="color:var(--amber)">{{ assessment.confidence_mci }}%</div>
+    <div class="conf-label">Mild Cognitive Impairment</div>
+    <div class="conf-bar" style="background:var(--border); overflow:hidden;"><div style="width:{{ assessment.confidence_mci }}%; height:4px; background:var(--amber); border-radius:2px;"></div></div>
+  </div>
+  <div class="conf-card">
+    <div class="conf-pct" style="color:var(--red)">{{ assessment.confidence_alzheimer }}%</div>
+    <div class="conf-label">Alzheimer's Disease</div>
+    <div class="conf-bar" style="background:var(--border); overflow:hidden;"><div style="width:{{ assessment.confidence_alzheimer }}%; height:4px; background:var(--red); border-radius:2px;"></div></div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 24px;">
+  <!-- Risk Score Gauge -->
+  <div class="card">
+    <div class="card-title">Overall Risk Score</div>
+    <div class="risk-gauge-wrap">
+      <div class="risk-circle {% if assessment.risk_score < 33 %}low{% elif assessment.risk_score < 66 %}moderate{% else %}high{% endif %}">
+        <div class="risk-num">{{ assessment.risk_score|floatformat:0 }}</div>
+        <div class="risk-unit">/ 100</div>
+      </div>
+      <div style="font-size:0.875rem; color:var(--text2);">
+        Risk Level: <strong style="color:{% if assessment.risk_score < 33 %}var(--green){% elif assessment.risk_score < 66 %}var(--amber){% else %}var(--red){% endif %}">{{ assessment.risk_level }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clinical Recommendations -->
+  <div class="card">
+    <div class="card-title">Clinical Recommendations</div>
+    <ul class="rec-list">
+      {% for rec in recommendations %}
+      <li>{{ rec }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<!-- Patient Data Summary -->
+<div class="data-grid">
+  <div class="card">
+    <div class="card-title">Clinical Data</div>
+    <div class="data-row"><span class="key">MMSE Score</span><span class="val">{{ assessment.mmse_score }}/30</span></div>
+    <div class="data-row"><span class="key">CDR Rating</span><span class="val">{{ assessment.cdr_score }}</span></div>
+    <div class="data-row"><span class="key">Education</span><span class="val">{{ assessment.education_years }} years</span></div>
+    <div class="data-row"><span class="key">Socioeconomic</span><span class="val">{{ assessment.socioeconomic_status }}/5</span></div>
+    <div class="data-row"><span class="key">APOE-ε4 Alleles</span><span class="val">{{ assessment.apoe4_alleles }}</span></div>
+    <div class="data-row"><span class="key">Family History</span><span class="val">{{ assessment.family_history|yesno:"Yes,No" }}</span></div>
+  </div>
+    <div class="card">
+    <div class="card-title">Cognitive Domain Scores</div>
+    <div class="data-row"><span class="key">Memory</span>
+      <span class="val">{{ assessment.memory_score }}/100</span></div>
+    <div class="data-row"><span class="key">Attention</span>
+      <span class="val">{{ assessment.attention_score }}/100</span></div>
+    <div class="data-row"><span class="key">Language</span>
+      <span class="val">{{ assessment.language_score }}/100</span></div>
+    <div class="data-row"><span class="key">Visuospatial</span>
+      <span class="val">{{ assessment.visuospatial_score }}/100</span></div>
+    <div class="data-row"><span class="key">NWBV</span><span class="val">{{ assessment.nwbv }}</span></div>
+    <div class="data-row"><span class="key">eTIV</span><span class="val">{{ assessment.etiv }} cm³</span></div>
+  </div>
+</div>
+
+<div style="display:flex; gap:12px; justify-content:flex-end;">
+  <a href="{% url 'history' %}" class="btn btn-secondary">← View All Records</a>
+  <a href="{% url 'assessment' %}" class="btn btn-primary">+ New Assessment</a>
+</div>
+{% endblock %}

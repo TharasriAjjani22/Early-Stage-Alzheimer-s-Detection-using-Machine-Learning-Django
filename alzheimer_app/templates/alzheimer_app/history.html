@@ -1,0 +1,140 @@
+{% extends "alzheimer_app/base.html" %}
+{% block title %}Patient History — NeuroDetect{% endblock %}
+
+{% block extra_css %}
+<style>
+  .filter-bar {
+    display: flex; gap: 12px; align-items: center; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 500;
+    border: 1px solid var(--border2); background: transparent; color: var(--text2);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn.active, .filter-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+  .search-input {
+    flex: 1; max-width: 280px; background: var(--surface2);
+    border: 1px solid var(--border2); border-radius: 8px;
+    padding: 8px 14px; color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+  }
+  .search-input:focus { outline: none; border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text3); }
+  .empty-state { text-align: center; padding: 60px; color: var(--text3); }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .count-badge {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 2px 10px; font-size: 0.78rem;
+    font-family: 'JetBrains Mono', monospace; color: var(--text2);
+    margin-left: auto;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex; align-items:center; justify-content:space-between;">
+  <div>
+    <h1>Patient History</h1>
+    <p>All assessment records stored in the database</p>
+  </div>
+  <a href="{% url 'assessment' %}" class="btn btn-primary">+ New Assessment</a>
+</div>
+
+<div class="card">
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="filterTable('all', this)">All</button>
+    <button class="filter-btn" onclick="filterTable('healthy', this)">Normal</button>
+    <button class="filter-btn" onclick="filterTable('mci', this)">MCI</button>
+    <button class="filter-btn" onclick="filterTable('alzheimer', this)">Alzheimer's</button>
+    <input type="text" class="search-input" placeholder="Search patient name..." oninput="searchTable(this.value)">
+    <span class="count-badge" id="row-count">{{ assessments|length }} records</span>
+  </div>
+
+  {% if assessments %}
+  <div class="table-wrap">
+    <table id="histTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Patient Name</th>
+          <th>Age</th>
+          <th>Gender</th>
+          <th>MMSE</th>
+          <th>CDR</th>
+          <th>Memory</th>
+          <th>NWBV</th>
+          <th>Risk</th>
+          <th>Diagnosis</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in assessments %}
+        <tr data-filter="{{ a.prediction }}" data-name="{{ a.patient_name|lower }}">
+          <td style="color:var(--text3); font-family:'JetBrains Mono',monospace; font-size:0.78rem;">{{ forloop.counter }}</td>
+          <td style="color:var(--text); font-weight:500;">{{ a.patient_name|default:"—" }}</td>
+          <td>{{ a.patient_age }}</td>
+          <td>{{ a.get_gender_display }}</td>
+          <td style="font-family:'JetBrains Mono',monospace;">
+            <span style="color:{% if a.mmse_score >= 27 %}var(--green){% elif a.mmse_score >= 24 %}var(--amber){% else %}var(--red){% endif %}">
+              {{ a.mmse_score }}
+            </span>
+          </td>
+          <td style="font-family:'JetBrains Mono',monospace;">{{ a.cdr_score }}</td>
+          <td style="font-family:'JetBrains Mono',monospace;">{{ a.memory_score }}</td>
+          <td style="font-family:'JetBrains Mono',monospace; font-size:0.8rem;">{{ a.nwbv }}</td>
+          <td>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <div style="width:50px; height:4px; background:var(--border); border-radius:2px; overflow:hidden;">
+                <div style="height:4px; width:{{ a.risk_score|floatformat:0 }}%; border-radius:2px; background:{% if a.risk_score < 33 %}var(--green){% elif a.risk_score < 66 %}var(--amber){% else %}var(--red){% endif %};"></div>
+              </div>
+              <span style="font-size:0.75rem; color:var(--text3);">{{ a.risk_score|floatformat:0 }}%</span>
+            </div>
+          </td>
+          <td><span class="badge {{ a.prediction }}">{{ a.result_label }}</span></td>
+          <td style="font-size:0.8rem; color:var(--text3); white-space:nowrap;">{{ a.created_at|date:"M d, Y" }}</td>
+          <td><a href="{% url 'result' a.pk %}" style="color:var(--accent2); font-size:0.8rem; text-decoration:none; white-space:nowrap;">View →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="icon">🧠</div>
+    <div>No assessments recorded yet.</div>
+    <a href="{% url 'assessment' %}" style="color:var(--accent2); font-size:0.875rem;">Run your first assessment →</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let currentFilter = 'all';
+
+  function filterTable(type, btn) {
+    currentFilter = type;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilters();
+  }
+
+  function searchTable(query) {
+    applyFilters(query.toLowerCase());
+  }
+
+  function applyFilters(query = '') {
+    const rows = document.querySelectorAll('#histTable tbody tr');
+    let visible = 0;
+    rows.forEach(row => {
+      const matchFilter = currentFilter === 'all' || row.dataset.filter === currentFilter;
+      const matchSearch = !query || row.dataset.name.includes(query);
+      row.style.display = (matchFilter && matchSearch) ? '' : 'none';
+      if (matchFilter && matchSearch) visible++;
+    });
+    document.getElementById('row-count').textContent = visible + ' records';
+  }
+</script>
+{% endblock %}

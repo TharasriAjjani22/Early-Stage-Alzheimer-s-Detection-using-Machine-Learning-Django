@@ -1,0 +1,191 @@
+{% extends "alzheimer_app/base.html" %}
+{% block title %}New Assessment — NeuroDetect{% endblock %}
+
+{% block extra_css %}
+<style>
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 28px; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px 28px; }
+  .form-grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px 28px; }
+  .span-2 { grid-column: span 2; }
+  .info-box {
+    background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15);
+    border-radius: 10px; padding: 14px 18px; margin-bottom: 24px;
+    font-size: 0.85rem; color: var(--text2); line-height: 1.6;
+  }
+  .info-box strong { color: var(--accent2); }
+  .step-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(59,130,246,0.15); color: var(--accent2);
+    font-size: 0.75rem; font-weight: 600; margin-right: 8px;
+  }
+  .section-title {
+    display: flex; align-items: center;
+    font-size: 0.9rem; font-weight: 600; color: var(--text);
+    margin-bottom: 18px;
+  }
+  .errorlist { list-style: none; color: var(--red); font-size: 0.78rem; margin-top: 4px; }
+  .checkbox-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 12px 14px; cursor: pointer;
+  }
+  .checkbox-row label { cursor: pointer; font-size: 0.875rem; color: var(--text2); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>New Patient Assessment</h1>
+  <p>Enter clinical and cognitive evaluation data for Alzheimer's risk analysis</p>
+</div>
+
+<div class="info-box">
+  ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for <strong>clinical research support only</strong> and should not replace professional medical diagnosis. Results must be interpreted by a qualified neurologist or geriatrician.
+</div>
+
+<form method="POST" action="{% url 'run_assessment' %}">
+  {% csrf_token %}
+
+  <!-- Section 1: Patient Info -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="section-title"><span class="step-badge">1</span> Patient Information</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Patient Name</label>
+        {{ form.patient_name }}
+        {% if form.patient_name.errors %}<ul class="errorlist">{% for e in form.patient_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Age (years)</label>
+        {{ form.patient_age }}
+        {% if form.patient_age.errors %}<ul class="errorlist">{% for e in form.patient_age.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gender</label>
+        {{ form.gender }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Years of Education</label>
+        {{ form.education_years }}
+        <div class="form-hint">Completed years of formal schooling</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Clinical Measures -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="section-title"><span class="step-badge">2</span> Clinical Assessment Scores</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">{{ form.mmse_score.label }}</label>
+        {{ form.mmse_score }}
+        <div class="form-hint">30 = Perfect; &lt;24 suggests impairment</div>
+        {% if form.mmse_score.errors %}<ul class="errorlist">{% for e in form.mmse_score.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{ form.cdr_score.label }}</label>
+        {{ form.cdr_score }}
+        <div class="form-hint">0 = Normal; 0.5 = Questionable; 1–3 = Mild to Severe</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Socioeconomic Status</label>
+        {{ form.socioeconomic_status }}
+        <div class="form-hint">1 = Lowest, 5 = Highest</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Brain Volumetrics -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="section-title"><span class="step-badge">3</span> Brain Volumetric Measurements</div>
+    <div class="form-grid-3">
+      <div class="form-group">
+        <label class="form-label">{{ form.etiv.label }}</label>
+        {{ form.etiv }}
+        <div class="form-hint">Normal range: 1100–1900 cm³</div>
+        {% if form.etiv.errors %}<ul class="errorlist">{% for e in form.etiv.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{ form.nwbv.label }}</label>
+        {{ form.nwbv }}
+        <div class="form-hint">Normal: 0.78–0.90; lower = atrophy</div>
+        {% if form.nwbv.errors %}<ul class="errorlist">{% for e in form.nwbv.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{ form.asf.label }}</label>
+        {{ form.asf }}
+        <div class="form-hint">Atlas scaling factor (MRI derived)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Cognitive Domain Scores -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="section-title"><span class="step-badge">4</span> Cognitive Domain Scores <span style="font-size:0.75rem; color:var(--text3); font-weight:400; margin-left:8px;">(0–100 scale)</span></div>
+    <div class="form-grid-4">
+      <div class="form-group">
+        <label class="form-label">{{ form.memory_score.label }}</label>
+        {{ form.memory_score }}
+        <div class="form-hint">Episodic & working memory</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{ form.attention_score.label }}</label>
+        {{ form.attention_score }}
+        <div class="form-hint">Sustained & divided attention</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{ form.language_score.label }}</label>
+        {{ form.language_score }}
+        <div class="form-hint">Verbal fluency & naming</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{ form.visuospatial_score.label }}</label>
+        {{ form.visuospatial_score }}
+        <div class="form-hint">Spatial reasoning & perception</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Genetic & Family Risk -->
+  <div class="card" style="margin-bottom: 24px;">
+    <div class="section-title"><span class="step-badge">5</span> Genetic & Family Risk Factors</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">{{ form.apoe4_alleles.label }}</label>
+        {{ form.apoe4_alleles }}
+        <div class="form-hint">APOE-ε4 is the strongest genetic risk factor</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Family History</label>
+        <div class="checkbox-row">
+          {{ form.family_history }}
+          <label for="{{ form.family_history.id_for_label }}">First-degree relative diagnosed with Alzheimer's disease</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:12px; justify-content:flex-end;">
+    <a href="{% url 'dashboard' %}" class="btn btn-secondary">← Cancel</a>
+    <button type="submit" class="btn btn-primary">Run ML Analysis →</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Live MMSE indicator
+  const mmseInput = document.querySelector('input[name="mmse_score"]');
+  if (mmseInput) {
+    mmseInput.addEventListener('input', function() {
+      const val = parseFloat(this.value);
+      let hint = this.closest('.form-group').querySelector('.form-hint');
+      if (val >= 27) hint.textContent = `${val}/30 — Normal range ✓`;
+      else if (val >= 24) hint.textContent = `${val}/30 — Borderline`;
+      else if (val >= 18) hint.textContent = `${val}/30 — Mild impairment`;
+      else hint.textContent = `${val}/30 — Moderate to severe`;
+    });
+  }
+</script>
+{% endblock %}

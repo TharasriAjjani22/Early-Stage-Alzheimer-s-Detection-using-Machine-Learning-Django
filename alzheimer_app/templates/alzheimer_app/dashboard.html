@@ -1,0 +1,174 @@
+{% extends "alzheimer_app/base.html" %}
+{% block title %}Dashboard — NeuroDetect{% endblock %}
+
+{% block extra_css %}
+<style>
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .chart-container { position: relative; height: 220px; }
+  .empty-state { text-align: center; padding: 40px; color: var(--text3); font-size: 0.875rem; }
+  .risk-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Clinical Dashboard</h1>
+  <p>Early-stage Alzheimer's detection powered by machine learning</p>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card blue">
+    <div class="stat-label">Total Assessments</div>
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-sub">All time records</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-label">Cognitively Normal</div>
+    <div class="stat-value">{{ healthy_count }}</div>
+    <div class="stat-sub">No impairment detected</div>
+  </div>
+  <div class="stat-card amber">
+    <div class="stat-label">Mild Cognitive Impairment</div>
+    <div class="stat-value">{{ mci_count }}</div>
+    <div class="stat-sub">MCI — monitor closely</div>
+  </div>
+  <div class="stat-card red">
+    <div class="stat-label">Alzheimer's Detected</div>
+    <div class="stat-value">{{ alzheimer_count }}</div>
+    <div class="stat-sub">Requires specialist care</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Distribution Chart -->
+  <div class="card">
+    <div class="card-title">Diagnosis Distribution</div>
+    {% if total > 0 %}
+    <div class="chart-container">
+      <canvas id="donutChart"></canvas>
+    </div>
+    {% else %}
+    <div class="empty-state">No assessments yet.<br>Run your first assessment to see data here.</div>
+    {% endif %}
+  </div>
+
+  <!-- Feature Importance -->
+  <div class="card">
+    <div class="card-title">Top Predictive Features</div>
+    <div style="margin-top: 8px;">
+      {% for i in "12345678" %}
+      <div id="feat-bar-{{ forloop.counter }}" style="margin-bottom: 10px; display:none;">
+        <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+          <span style="font-size:0.8rem; color:var(--text2);" id="feat-name-{{ forloop.counter }}"></span>
+          <span style="font-family:'JetBrains Mono', monospace; font-size:0.75rem; color:var(--text3);" id="feat-val-{{ forloop.counter }}"></span>
+        </div>
+        <div style="background:var(--border); border-radius:3px; height:6px;">
+          <div id="feat-fill-{{ forloop.counter }}" style="height:6px; border-radius:3px; background:linear-gradient(90deg,var(--accent),var(--cyan)); width:0; transition: width 0.8s ease;"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Recent Assessments -->
+<div class="card" style="margin-top: 20px;">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 18px;">
+    <div class="card-title" style="margin-bottom:0;">Recent Assessments</div>
+    <a href="{% url 'assessment' %}" class="btn btn-primary">+ New Assessment</a>
+  </div>
+
+  {% if recent_assessments %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Patient</th>
+          <th>Age</th>
+          <th>MMSE</th>
+          <th>CDR</th>
+          <th>Risk Score</th>
+          <th>Diagnosis</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in recent_assessments %}
+        <tr>
+          <td style="color:var(--text); font-weight:500;">{{ a.patient_name|default:"Anonymous" }}</td>
+          <td>{{ a.patient_age }}</td>
+          <td style="font-family:'JetBrains Mono', monospace;">{{ a.mmse_score }}</td>
+          <td style="font-family:'JetBrains Mono', monospace;">{{ a.cdr_score }}</td>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="background:var(--border); border-radius:3px; height:5px; width:60px; overflow:hidden;">
+                <div style="height:5px; border-radius:3px; width:{{ a.risk_score|floatformat:0 }}%; background:{% if a.risk_score < 33 %}var(--green){% elif a.risk_score < 66 %}var(--amber){% else %}var(--red){% endif %};"></div>
+              </div>
+              <span style="font-family:'JetBrains Mono', monospace; font-size:0.78rem;">{{ a.risk_score|floatformat:0 }}%</span>
+            </div>
+          </td>
+          <td>
+            <span class="badge {{ a.prediction }}">{{ a.result_label }}</span>
+          </td>
+          <td style="font-size:0.8rem; color:var(--text3);">{{ a.created_at|date:"M d, Y" }}</td>
+          <td><a href="{% url 'result' a.pk %}" style="color:var(--accent2); font-size:0.8rem; text-decoration:none;">View →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    No assessments yet. <a href="{% url 'assessment' %}" style="color:var(--accent2);">Run your first assessment →</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+  // Feature importance bars
+  const featureLabels = {{ feature_labels|safe }};
+  const featureValues = {{ feature_values|safe }};
+  const maxVal = Math.max(...featureValues);
+  featureLabels.forEach((name, i) => {
+    const idx = i + 1;
+    document.getElementById(`feat-bar-${idx}`).style.display = 'block';
+    document.getElementById(`feat-name-${idx}`).textContent = name;
+    document.getElementById(`feat-val-${idx}`).textContent = featureValues[i].toFixed(1) + '%';
+    setTimeout(() => {
+      document.getElementById(`feat-fill-${idx}`).style.width = (featureValues[i] / maxVal * 100) + '%';
+    }, 100 + i * 80);
+  });
+
+  // Donut chart
+  {% if total > 0 %}
+  const ctx = document.getElementById('donutChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Cognitively Normal', 'Mild Cognitive Impairment', "Alzheimer's"],
+      datasets: [{
+        data: [{{ healthy_count }}, {{ mci_count }}, {{ alzheimer_count }}],
+        backgroundColor: ['rgba(16,185,129,0.8)', 'rgba(245,158,11,0.8)', 'rgba(239,68,68,0.8)'],
+        borderColor: ['#10b981', '#f59e0b', '#ef4444'],
+        borderWidth: 1.5,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#7a90b0', font: { family: 'DM Sans', size: 12 }, padding: 16, boxWidth: 12 }
+        }
+      }
+    }
+  });
+  {% endif %}
+</script>
+{% endblock %}

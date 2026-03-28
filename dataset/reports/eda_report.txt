@@ -1,0 +1,40 @@
+============================================================
+  ALZHEIMER'S DETECTION — EDA REPORT
+============================================================
+
+Dataset shape : (2124, 20)
+Subjects      : 600
+Visits/subject: 3.5 avg
+
+── Class Distribution ──
+  Nondemented      1056  (49.7%)
+  MCI               543  (25.6%)
+  Demented          525  (24.7%)
+
+── Numeric Summary ──
+           Age     EDUC      SES     MMSE      CDR     eTIV     nWBV      ASF  Memory_Score  Attention_Score  Language_Score  Visuospatial_Score  Family_History  APOE4_Alleles
+count  2124.00  2124.00  2124.00  2124.00  2124.00  2124.00  2124.00  2124.00       2124.00          2124.00         2124.00             2124.00         2124.00        2124.00
+mean     73.15    13.51     2.85    25.18     0.59  1468.14     0.79     1.21         71.18            73.52           73.95               72.31            0.32           0.65
+std       7.89     3.04     1.10     4.67     0.76   138.64     0.05     0.14         19.32            18.80           18.09               19.47            0.47           0.71
+min      55.00     4.00     1.00     8.00     0.00  1107.70     0.66     0.88         15.00            15.00           16.30               15.00            0.00           0.00
+25%      68.00    11.32     2.00    23.30     0.00  1373.45     0.75     1.11         56.28            60.60           61.80               59.10            0.00           0.00
+50%      72.90    13.60     3.00    26.90     0.50  1472.50     0.80     1.20         76.90            79.40           78.90               77.20            0.00           1.00
+75%      78.03    15.37     4.00    28.60     1.00  1560.00     0.83     1.30         86.93            88.00           87.80               87.50            1.00           1.00
+max      96.00    22.83     5.00    30.00     3.00  1900.00     0.91     1.67        100.00           100.00          100.00              100.00            1.00           2.00
+
+── Missing Values ──
+  None found.
+
+── Gender Distribution ──
+Gender         F    M
+Group                
+Demented     258  267
+MCI          279  264
+Nondemented  540  516
+
+── Key Feature Means by Group ──
+              MMSE   CDR  nWBV  Memory_Score    Age
+Group                                              
+Demented     18.96  1.53  0.72         46.78  78.03
+MCI          24.93  0.67  0.77         64.97  74.83
+Nondemented  28.41  0.09  0.83         86.50  69.86
